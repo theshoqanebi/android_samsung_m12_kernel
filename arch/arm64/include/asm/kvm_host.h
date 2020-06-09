@@ -542,4 +542,6 @@ static inline enum mitigation_state kvm_arm_get_spectre_bhb_state(void)
 	return arm64_get_spectre_bhb_state();
 }
 
+#define kvm_arm_vcpu_loaded(vcpu)	((vcpu)->arch.sysregs_loaded_on_cpu)
+
 #endif /* __ARM64_KVM_HOST_H__ */
