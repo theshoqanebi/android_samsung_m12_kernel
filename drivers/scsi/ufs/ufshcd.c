@@ -6628,7 +6628,7 @@ static int ufshcd_abort(struct scsi_cmnd *cmd)
 			/* command completed already */
 			dev_err(hba->dev, "%s: cmd at tag %d successfully cleared from DB.\n",
 				__func__, tag);
-			goto out;
+			goto cleanup;
 		} else {
 			dev_err(hba->dev,
 				"%s: no response from device. tag = %d, err %d\n",
@@ -6662,6 +6662,7 @@ static int ufshcd_abort(struct scsi_cmnd *cmd)
 	}
 
 	err = ufshcd_clear_cmd(hba, tag);
+cleanup:
 	if (err) {
 		dev_err(hba->dev, "%s: Failed clearing cmd at tag %d, err %d\n",
 			__func__, tag, err);
