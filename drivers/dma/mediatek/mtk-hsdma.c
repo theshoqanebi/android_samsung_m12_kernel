@@ -1007,6 +1007,7 @@ static int mtk_hsdma_probe(struct platform_device *pdev)
 	return 0;
 
 err_unregister:
+	mtk_hsdma_hw_deinit(hsdma);
 	dma_async_device_unregister(dd);
 
 	return err;
