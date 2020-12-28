@@ -6427,55 +6427,52 @@ static int ufshcd_issue_tm_cmd(struct ufs_hba *hba, int lun_id, int task_id,
  */
 static int ufshcd_eh_device_reset_handler(struct scsi_cmnd *cmd)
 {
-	struct Scsi_Host *host;
-	struct ufs_hba *hba;
-	unsigned int tag;
-	u32 pos;
-	int err;
-	u8 resp = 0xF;
-	struct ufshcd_lrb *lrbp;
-	unsigned long flags;
+        struct Scsi_Host *host;
+        struct ufs_hba *hba;
+        u32 pos;
+        int err;
+		u8 resp = 0xF, lun;
+        unsigned long flags;
 
-	host = cmd->device->host;
-	hba = shost_priv(host);
-	tag = cmd->request->tag;
+        host = cmd->device->host;
+        hba = shost_priv(host);
 
-	exynos_ufs_dump_cport_log(hba);
+        exynos_ufs_dump_cport_log(hba);
 
-	/* Dump debugging information to system memory */
-	ufshcd_vops_dbg_register_dump(hba);
-	exynos_ufs_show_uic_info(hba);
+        /* Dump debugging information to system memory */
+        ufshcd_vops_dbg_register_dump(hba);
+        exynos_ufs_show_uic_info(hba);
 
-	lrbp = &hba->lrb[tag];
-	err = ufshcd_issue_tm_cmd(hba, lrbp->lun, 0, UFS_LOGICAL_RESET, &resp);
-	if (err || resp != UPIU_TASK_MANAGEMENT_FUNC_COMPL) {
-		if (!err)
-			err = resp;
-		goto out;
-	}
+	lun = ufshcd_scsi_to_upiu_lun(cmd->device->lun);
+	err = ufshcd_issue_tm_cmd(hba, lun, 0, UFS_LOGICAL_RESET, &resp);
+        if (err || resp != UPIU_TASK_MANAGEMENT_FUNC_COMPL) {
+                if (!err)
+                        err = resp;
+                goto out;
+        }
 
-	/* clear the commands that were pending for corresponding LUN */
-	for_each_set_bit(pos, &hba->outstanding_reqs, hba->nutrs) {
-		if (hba->lrb[pos].lun == lrbp->lun) {
-			err = ufshcd_clear_cmd(hba, pos);
-			if (err)
-				break;
-		}
-	}
-	spin_lock_irqsave(host->host_lock, flags);
-	ufshcd_transfer_req_compl(hba, DID_RESET);
-	spin_unlock_irqrestore(host->host_lock, flags);
+        /* clear the commands that were pending for corresponding LUN */
+        for_each_set_bit(pos, &hba->outstanding_reqs, hba->nutrs) {
+                if (hba->lrb[pos].lun == lun) {
+                        err = ufshcd_clear_cmd(hba, pos);
+                        if (err)
+                                break;
+                }
+        }
+        spin_lock_irqsave(host->host_lock, flags);
+        ufshcd_transfer_req_compl(hba, DID_RESET);
+        spin_unlock_irqrestore(host->host_lock, flags);
 
 out:
-	hba->req_abort_count = 0;
-	if (!err) {
-		dev_info(hba->dev, "%s: LU reset succeeded\n", __func__);
-		err = SUCCESS;
-	} else {
-		dev_err(hba->dev, "%s: failed with err %d\n", __func__, err);
-		err = FAILED;
-	}
-	return err;
+        hba->req_abort_count = 0;
+        if (!err) {
+                dev_info(hba->dev, "%s: LU reset succeeded\n", __func__);
+                err = SUCCESS;
+        } else {
+                dev_err(hba->dev, "%s: failed with err %d\n", __func__, err);
+                err = FAILED;
+        }
+        return err;
 }
 
 static void ufshcd_set_req_abort_skip(struct ufs_hba *hba, unsigned long bitmap)
