@@ -626,8 +626,8 @@ int device_links_check_suppliers(struct device *dev)
 	 * resume the supplier even without DL_FLAG_RPM_ACTIVE.
 	 */
 	if (link->status == DL_STATE_CONSUMER_PROBE &&
-	    flags & DL_FLAG_PM_RUNTIME)
-		pm_runtime_resume(supplier);
+	    link->flags & DL_FLAG_PM_RUNTIME)
+		pm_runtime_resume(link->supplier);
 
 	/*
 	 * Device waiting for supplier to become available is not allowed to
