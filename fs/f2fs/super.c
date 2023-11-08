@@ -365,6 +365,18 @@ static int f2fs_sb_read_encoding(const struct f2fs_super_block *sb,
 }
 #endif
 
+void f2fs_msg(struct super_block *sb, const char *level, const char *fmt, ...)
+{
+	struct va_format vaf;
+	va_list args;
+
+	va_start(args, fmt);
+	vaf.fmt = fmt;
+	vaf.va = &args;
+	printk_ratelimited("%sF2FS-fs (%s): %pV\n", level, sb->s_id, &vaf);
+	va_end(args);
+}
+
 static inline void limit_reserve_root(struct f2fs_sb_info *sbi)
 {
 	block_t limit = min(sbi->user_block_count / 100,
